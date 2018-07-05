@@ -33,7 +33,7 @@ public class Client : MonoBehaviour {
 
     public GameObject playerPrefab;
 
-    private List<Player> players = new List<Player>();
+    private Dictionary<int, Player> players = new Dictionary<int, Player>();
         
 	// Update is called once per frame
 	void Update ()  
@@ -84,6 +84,11 @@ public class Client : MonoBehaviour {
                 break;
 
             case "DCN":
+                RemovePlayer(int.Parse(data[1]));
+                break;
+
+            case "ASKPOSITION":
+                OnAskPosition(data);
                 break;
 
             default:
@@ -130,23 +135,50 @@ public class Client : MonoBehaviour {
         }
     }
 
+    private void OnAskPosition (string [] data)
+    {
+        for (int i = 1; i < data.Length; i++)
+        {
+            string[] d = data[i].Split('%');
+            int connId = int.Parse(d[0]);
+
+            if (connId != myConnId)
+            {
+                Vector3 pos = new Vector3();
+                pos.x = float.Parse(d[1]);
+                pos.y = float.Parse(d[2]);
+                players[connId].avatar.GetComponent<Transform>().position = pos;
+            }
+        }
+
+        Vector3 p = players[myConnId].avatar.GetComponent<Transform>().position;
+        string msg = "MYPOSITION|" + p.x.ToString() + "|" + p.y.ToString();
+        Send(msg, unreliableChannel);
+    }
+
     private void SpawnPlayer (string name,int connId)
     {
         GameObject go = Instantiate(playerPrefab) as GameObject;
 
         if (connId == myConnId)
         {
+            go.AddComponent<PlayerMotor>();
             GameObject.Find("Canvas").SetActive(false);
             isStarted = true;
-        }
-        
+        }        
 
         Player p = new Player();
         p.avatar = go;
         p.name = name;
         p.connId = connId;
         p.avatar.GetComponentInChildren<TextMesh>().text = name;
-        players.Add(p);
+        players.Add(connId, p);
+    }
+
+    private void RemovePlayer(int connId)
+    {
+        Destroy(players[connId].avatar);
+        players.Remove(connId);
     }
 
     private void Send(string msg, int channel)

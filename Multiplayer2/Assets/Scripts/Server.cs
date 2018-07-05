@@ -8,6 +8,7 @@ public class ServerClient
 {
     public string name;
     public int connId;
+    public Vector3 position;
 }
 
 public class Server : MonoBehaviour {
@@ -25,6 +26,9 @@ public class Server : MonoBehaviour {
     private byte error;
 
     private List<ServerClient> clients = new List<ServerClient>();
+
+    private float lastUpdate;
+    private float updateRate = 0.05f;
 
 	// Use this for initialization
 	void Start ()
@@ -76,10 +80,20 @@ public class Server : MonoBehaviour {
                 break;
             case NetworkEventType.DisconnectEvent:
                 Debug.Log("Player connectionId " + connectionId + " has disconnected");
+                OnDisconnection(connectionId);
                 break;
 
             case NetworkEventType.BroadcastEvent:
                 break;
+        }
+
+        if (Time.time - lastUpdate > updateRate)
+        {
+            lastUpdate = Time.time;
+            string msg = "ASKPOSITION";
+            foreach (ServerClient sc in clients)
+                msg += "|" + sc.connId + "%" + sc.position.x.ToString() + "%" + sc.position.y.ToString();
+            Send(msg, unreliableChannel, clients);
         }
     }
 
@@ -93,25 +107,43 @@ public class Server : MonoBehaviour {
                 OnNameIs(data[1], connId);
                 break;
 
+            case "MYPOSITION":
+                OnPosition(data, connId);
+                break;
+
             default:
                 break;
         }
     }
 
+    private void OnPosition (string [] data, int connId)
+    {
+        Vector3 pos = new Vector3();
+        pos.x = float.Parse(data[1]);
+        pos.y = float.Parse(data[2]);
+        clients.Find(x => x.connId == connId).position = pos;
+    }
+
     private void OnConnection (int connId)
     {
-        ServerClient sc = new ServerClient();
-        sc.name = "TEMP";
-        sc.connId = connId;
-        clients.Add(sc);
-
         string message = "ASKNAME|" + connId;
         foreach (ServerClient c in clients)
         {
             message += "|" + c.name + "%" + c.connId;
         }
 
+        ServerClient sc = new ServerClient();
+        sc.name = "TEMP";
+        sc.connId = connId;
+        clients.Add(sc);
+
         Send(message, reliableChannel, connId);
+    }
+
+    private void OnDisconnection (int connId)
+    {
+        clients.Remove(clients.Find(x => x.connId == connId));
+        Send("DCN|" + connId, reliableChannel, clients);
     }
 
     private void OnNameIs (string name, int connId)
