@@ -21,6 +21,8 @@ public class CheckersBoard : MonoBehaviour
 
     private bool isWhiteTurn;
 
+    private List<Piece> killerPieces = new List<Piece>();
+
 	// Use this for initialization
 	void Start ()
     {
@@ -48,12 +50,14 @@ public class CheckersBoard : MonoBehaviour
             if (selectedPiece != null)
                 LiftAndDragPiece(selectedPiece);
 
-            if (Input.GetMouseButtonDown(0) && selectedPiece == null)
+            if (Input.GetMouseButtonDown(0)
+                && selectedPiece == null)
             {
                 SelectPiece(x, y);
             }
 
-            if (Input.GetMouseButtonUp (0))
+            if (Input.GetMouseButtonUp (0)
+                 && selectedPiece != null)
             {
                 TryMove((int)startDrag.x,
                         (int)startDrag.y,
@@ -85,7 +89,7 @@ public class CheckersBoard : MonoBehaviour
         endDrag = new Vector2(x2, y2);
         selectedPiece = pieces[x1, y1];
 
-        if (x2 < 0 || x2 >= pieces.Length || y2 < 0 || y2 >= pieces.Length)
+        if (x2 < 0 || x2 >= 8 || y2 < 0 || y2 >= 8)
         {
             if (selectedPiece != null)
                 MovePiece(selectedPiece, x1, y1);
@@ -108,10 +112,14 @@ public class CheckersBoard : MonoBehaviour
             }
         }
 
+        ReadKillerPieces();
+
         bool validMove = selectedPiece.ValidMove(pieces, x1, y1, x2, y2);
         //Debug.Log(x2 + "," + y2 + " is " + validMove + " move");
         if (validMove)
         {
+            bool hasKilled = false;
+
             if (Mathf.Abs(x2-x1) == 2)
             {
                 Piece p = pieces[(x1 + x2) / 2, (y1 + y2) / 2];
@@ -119,8 +127,17 @@ public class CheckersBoard : MonoBehaviour
                 {
                     pieces[(x1 + x2) / 2, (y1 + y2) / 2] = null;
                     Destroy((p as MonoBehaviour).gameObject, 0.2f);
-                    //Destroy(p);
+                    hasKilled = true;
                 }
+            }
+
+            if (killerPieces.Count > 0 && !hasKilled)
+            {
+                MovePiece(selectedPiece, x1, y1);
+                //startDrag = Vector2.zero;
+                startDrag.x = startDrag.y = -1;
+                selectedPiece = null;
+                return;
             }
 
             pieces[x1, y1] = null;
@@ -128,6 +145,14 @@ public class CheckersBoard : MonoBehaviour
             MovePiece(selectedPiece, x2, y2);
 
             EndTurn();
+        }
+        else
+        {
+            MovePiece(selectedPiece, x1, y1);
+            //startDrag = Vector2.zero;
+            startDrag.x = startDrag.y = -1;
+            selectedPiece = null;
+            return;
         }
     }
 
@@ -149,11 +174,13 @@ public class CheckersBoard : MonoBehaviour
     private void SelectPiece (int x, int y)
     {
         // check bound
-        if (x < 0 || x >= pieces.Length || y < 0 || y >= pieces.Length)
+        if (x < 0 || x >= 8 || y < 0 || y >= 8)
             return;
 
         Piece p = pieces[x, y];
-        if (p != null)
+        if (p != null
+            && p.isWhite == isWhiteTurn)
+            //&& (killerPieces.Count == 0 || killerPieces.Find(fp => fp == p)))
         {
             selectedPiece = p;
             startDrag = mouseOver;
@@ -222,5 +249,17 @@ public class CheckersBoard : MonoBehaviour
                                 + (Vector3.forward * y)
                                 + boardOffset
                                 + pieceOffset;
+    }
+
+    private void ReadKillerPieces ()
+    {
+        killerPieces = new List<Piece>();
+
+        for (int x = 0; x < 8; x++)
+            for (int y = 0; y < 8; y++)
+                if (pieces[x, y] != null
+                    && pieces[x, y].isWhite == isWhiteTurn
+                    && pieces[x, y].CanKill(pieces, x, y))
+                    killerPieces.Add(pieces[x, y]);
     }
 }

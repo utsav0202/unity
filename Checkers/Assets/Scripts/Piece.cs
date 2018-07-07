@@ -67,4 +67,51 @@ public class Piece : MonoBehaviour
 
         return false;
     }
+
+    public bool CanKill (Piece[,] board, int x, int y)
+    {
+        if (isWhite)
+        {
+            //top left
+            if (x >= 2 && y <= 5)
+            {
+                if (board[x - 2, y + 2] == null
+                    && board[x - 1, y + 1] != null
+                    && board[x - 1, y + 1].isWhite != isWhite)
+                    return true;
+            }
+
+            //top right
+            if (x <= 5 && y <= 5)
+            {
+                if (board[x + 2, y + 2] == null
+                    && board[x + 1, y + 1] != null
+                    && board[x + 1, y + 1].isWhite != isWhite)
+                    return true;
+            }
+        }
+
+        if (!isWhite)
+        {
+            //bottom left
+            if (x >= 2 && y >= 2)
+            {
+                if (board[x - 2, y - 2] == null
+                    && board[x - 1, y - 1] != null
+                    && board[x - 1, y - 1].isWhite != isWhite)
+                    return true;
+            }
+
+            //top right
+            if (x <= 5 && y >= 2)
+            {
+                if (board[x + 2, y - 2] == null
+                    && board[x + 1, y - 1] != null
+                    && board[x + 1, y - 1].isWhite != isWhite)
+                    return true;
+            }
+        }
+
+        return false;
+    }
 }
