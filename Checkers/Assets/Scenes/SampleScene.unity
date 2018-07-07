@@ -132,6 +132,18 @@ MonoBehaviour:
     type: 2}
   blackPiecePrefab: {fileID: 1570872823355590, guid: 65eb78285c6a55845864f06e17f0a50c,
     type: 2}
+--- !u!65 &23206049
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 23206047}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.08, y: 0.08, z: 0.001}
+  m_Center: {x: 0.0000000037252903, y: 0, z: -0.0004999997}
 --- !u!1001 &174527727
 Prefab:
   m_ObjectHideFlags: 0
@@ -175,6 +187,14 @@ Prefab:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 22d97884af1f60048b2e9d33e51380cf, type: 2}
+    - target: {fileID: 100000, guid: 296ae753fc7e7a1409eef5ba6bfc8c75, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 2300000, guid: 296ae753fc7e7a1409eef5ba6bfc8c75, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 296ae753fc7e7a1409eef5ba6bfc8c75, type: 3}
   m_IsPrefabParent: 0
@@ -367,6 +387,10 @@ Prefab:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 22d97884af1f60048b2e9d33e51380cf, type: 2}
+    - target: {fileID: 100000, guid: 7e311911cc12c1e4782a31d76f99f48c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 7e311911cc12c1e4782a31d76f99f48c, type: 3}
   m_IsPrefabParent: 0
