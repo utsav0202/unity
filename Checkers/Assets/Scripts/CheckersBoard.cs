@@ -19,10 +19,13 @@ public class CheckersBoard : MonoBehaviour
     private Vector2 startDrag;
     private Vector2 endDrag;
 
+    private bool isWhiteTurn;
+
 	// Use this for initialization
 	void Start ()
     {
         GenerateBoard();
+        isWhiteTurn = true;
 	}
 	
 	// Update is called once per frame
@@ -42,7 +45,10 @@ public class CheckersBoard : MonoBehaviour
             int x = (int)mouseOver.x;
             int y = (int)mouseOver.y;
 
-            if (Input.GetMouseButtonDown(0))
+            if (selectedPiece != null)
+                LiftAndDragPiece(selectedPiece);
+
+            if (Input.GetMouseButtonDown(0) && selectedPiece == null)
             {
                 SelectPiece(x, y);
             }
@@ -56,6 +62,22 @@ public class CheckersBoard : MonoBehaviour
         }
     }
 
+    private void LiftAndDragPiece (Piece p)
+    {
+        if (!Camera.main)
+        {
+            Debug.Log("Unable to find main camera");
+            return;
+        }
+
+        RaycastHit hit;
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition),
+                            out hit, 25.0f, LayerMask.GetMask("Board")))
+        {
+            p.transform.position = hit.point + Vector3.up;
+        }
+    }
+
     private void TryMove (int x1, int y1, int x2, int y2)
     {
         // for multiplayer support
@@ -63,13 +85,71 @@ public class CheckersBoard : MonoBehaviour
         endDrag = new Vector2(x2, y2);
         selectedPiece = pieces[x1, y1];
 
-        MovePiece(selectedPiece, x2, y2);
+        if (x2 < 0 || x2 >= pieces.Length || y2 < 0 || y2 >= pieces.Length)
+        {
+            if (selectedPiece != null)
+                MovePiece(selectedPiece, x1, y1);
+
+            //startDrag = Vector2.zero;
+            startDrag.x = startDrag.y = -1;
+            selectedPiece = null;
+            return;
+        }
+
+        if (selectedPiece != null)
+        {
+            if (startDrag == endDrag)
+            {
+                MovePiece(selectedPiece, x1, y1);
+                //startDrag = Vector2.zero;
+                startDrag.x = startDrag.y = -1;
+                selectedPiece = null;
+                return;
+            }
+        }
+
+        bool validMove = selectedPiece.ValidMove(pieces, x1, y1, x2, y2);
+        //Debug.Log(x2 + "," + y2 + " is " + validMove + " move");
+        if (validMove)
+        {
+            if (Mathf.Abs(x2-x1) == 2)
+            {
+                Piece p = pieces[(x1 + x2) / 2, (y1 + y2) / 2];
+                if (p != null)
+                {
+                    pieces[(x1 + x2) / 2, (y1 + y2) / 2] = null;
+                    Destroy((p as MonoBehaviour).gameObject, 0.2f);
+                    //Destroy(p);
+                }
+            }
+
+            pieces[x1, y1] = null;
+            pieces[x2, y2] = selectedPiece;
+            MovePiece(selectedPiece, x2, y2);
+
+            EndTurn();
+        }
+    }
+
+    private void EndTurn()
+    {
+        selectedPiece = null;
+        //startDrag = Vector2.zero;
+        startDrag.x = startDrag.y = -1;
+        isWhiteTurn = !isWhiteTurn;
+
+        CheckVictory();
+    }
+
+    private void CheckVictory ()
+    {
+
     }
 
     private void SelectPiece (int x, int y)
     {
         // check bound
-        if (x < 0 || x > pieces.Length || y < 0 || y > pieces.Length)
+        if (x < 0 || x >= pieces.Length || y < 0 || y >= pieces.Length)
             return;
 
         Piece p = pieces[x, y];
