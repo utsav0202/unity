@@ -15,6 +15,10 @@ public class CheckersBoard : MonoBehaviour
     private Vector2 mouseOver;
     private Vector2 oldMO;
 
+    private Piece selectedPiece;
+    private Vector2 startDrag;
+    private Vector2 endDrag;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -30,7 +34,50 @@ public class CheckersBoard : MonoBehaviour
         if (mouseOver != oldMO)
         {
             oldMO = mouseOver;
-            Debug.Log(mouseOver);
+            //Debug.Log(mouseOver);
+        }
+
+        // if my turn
+        {
+            int x = (int)mouseOver.x;
+            int y = (int)mouseOver.y;
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                SelectPiece(x, y);
+            }
+
+            if (Input.GetMouseButtonUp (0))
+            {
+                TryMove((int)startDrag.x,
+                        (int)startDrag.y,
+                        x, y);
+            }
+        }
+    }
+
+    private void TryMove (int x1, int y1, int x2, int y2)
+    {
+        // for multiplayer support
+        startDrag = new Vector2(x1, y1);
+        endDrag = new Vector2(x2, y2);
+        selectedPiece = pieces[x1, y1];
+
+        MovePiece(selectedPiece, x2, y2);
+    }
+
+    private void SelectPiece (int x, int y)
+    {
+        // check bound
+        if (x < 0 || x > pieces.Length || y < 0 || y > pieces.Length)
+            return;
+
+        Piece p = pieces[x, y];
+        if (p != null)
+        {
+            selectedPiece = p;
+            startDrag = mouseOver;
+            Debug.Log(p.name + " at " + startDrag + " is selected");
         }
     }
 
