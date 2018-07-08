@@ -29,7 +29,7 @@ public class Piece : MonoBehaviour
         int xDiff = Mathf.Abs(x2 - x1);
         int yDiff = y2 - y1;
 
-        if (isWhite)
+        if (isWhite || isKing)
         {
             if (xDiff == 1)
             {
@@ -47,7 +47,7 @@ public class Piece : MonoBehaviour
             }
         }
 
-        if (!isWhite)
+        if (!isWhite || isKing)
         {
             if (xDiff == 1)
             {
@@ -70,7 +70,7 @@ public class Piece : MonoBehaviour
 
     public bool CanKill (Piece[,] board, int x, int y)
     {
-        if (isWhite)
+        if (isWhite || isKing)
         {
             //top left
             if (x >= 2 && y <= 5)
@@ -91,7 +91,7 @@ public class Piece : MonoBehaviour
             }
         }
 
-        if (!isWhite)
+        if (!isWhite || isKing)
         {
             //bottom left
             if (x >= 2 && y >= 2)
