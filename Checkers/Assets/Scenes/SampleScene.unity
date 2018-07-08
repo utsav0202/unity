@@ -132,6 +132,7 @@ MonoBehaviour:
     type: 2}
   blackPiecePrefab: {fileID: 1570872823355590, guid: 65eb78285c6a55845864f06e17f0a50c,
     type: 2}
+  isWhite: 0
 --- !u!65 &23206049
 BoxCollider:
   m_ObjectHideFlags: 0
