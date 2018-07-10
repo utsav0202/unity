@@ -32,7 +32,7 @@ public class Server : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.Log("Socket error : " + e.Message);
+            Debug.Log("Server Socket error : " + e.Message);
         }
     }
 
@@ -43,13 +43,16 @@ public class Server : MonoBehaviour
 
     private void AcceptTcpClient(IAsyncResult ar)
     {
-        TcpListener listener = (TcpListener)ar.AsyncState;
+        string msg = "SWHO";
+        foreach (ServerClient c in clients)
+            msg += "|" + c.clientName;
 
+        TcpListener listener = (TcpListener)ar.AsyncState;
         ServerClient client = new ServerClient(listener.EndAcceptTcpClient(ar));
         clients.Add(client);
-
+        Broadcast(msg, client);
         StartListening();
-
+        
         Debug.Log("Somebody has connected");
     }
 
@@ -113,12 +116,68 @@ public class Server : MonoBehaviour
     private void OnIncomingData (ServerClient c, string data)
     {
         Debug.Log(c.clientName + " : " + data);
+        string[] aData = data.Split('|');
+
+        switch (aData[0])
+        {
+            case "CWHO":
+                c.clientName = aData[1];
+                c.isHost = (aData[2] == "1");
+                Broadcast("SCNN|" + c.clientName);
+                break;
+
+            case "CMOV":
+                string msg = "SMOV"
+                             + "|" + aData[1]
+                             + "|" + aData[2]
+                             + "|" + aData[3]
+                             + "|" + aData[4];
+                Broadcast(msg);
+                break;
+        }
+    }
+    private void Broadcast(string data)
+    {
+        foreach (ServerClient c in clients)
+        {
+            Broadcast(data, c);
+        }
+    }
+    private void Broadcast(string data, ServerClient client)
+    {
+        try
+        {
+            StreamWriter writer = new StreamWriter(client.tcp.GetStream());
+            writer.WriteLine(data);
+            writer.Flush();
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Write error : " + e.Message);
+        }
+    }
+    private void OnAppliactionQuit()
+    {
+        CloseSocket();
+    }
+    private void OnDisable()
+    {
+        CloseSocket();
+    }
+    private void CloseSocket()
+    {
+        if (!isServerStarted)
+            return;
+
+        server.Stop();
+        isServerStarted = false;
     }
 }
 
 public class ServerClient
 {
     public string clientName;
+    public bool isHost;
     public TcpClient tcp;
 
     public ServerClient (TcpClient tcp)

@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class CheckersBoard : MonoBehaviour
 {
+    public static CheckersBoard Instance { set; get; }
 
     public Piece[,] pieces = new Piece[8, 8];
     public GameObject whitePiecePrefab;
@@ -23,11 +24,16 @@ public class CheckersBoard : MonoBehaviour
     private bool isWhiteTurn;
     bool hasKilled;
 
+    private Client client;
+
     private List<Piece> killerPieces = new List<Piece>();
 
 	// Use this for initialization
 	void Start ()
     {
+        Instance = this;
+        client = FindObjectOfType<Client>();
+        isWhite = client.isHost;
         GenerateBoard();
         isWhiteTurn = true;
 	}
@@ -83,7 +89,7 @@ public class CheckersBoard : MonoBehaviour
         }
     }
 
-    private void TryMove (int x1, int y1, int x2, int y2)
+    public void TryMove (int x1, int y1, int x2, int y2)
     {
         // for multiplayer support
         startDrag = new Vector2(x1, y1);
@@ -113,26 +119,41 @@ public class CheckersBoard : MonoBehaviour
                 selectedPiece = null;
                 return;
             }
-        }
 
-        ReadKillerPieces();
 
-        bool validMove = selectedPiece.ValidMove(pieces, x1, y1, x2, y2);
-        //Debug.Log(x2 + "," + y2 + " is " + validMove + " move");
-        if (validMove)
-        {
-            if (Mathf.Abs(x2-x1) == 2)
+            ReadKillerPieces();
+
+            bool validMove = selectedPiece.ValidMove(pieces, x1, y1, x2, y2);
+            //Debug.Log(x2 + "," + y2 + " is " + validMove + " move");
+            if (validMove)
             {
-                Piece p = pieces[(x1 + x2) / 2, (y1 + y2) / 2];
-                if (p != null)
+                if (Mathf.Abs(x2 - x1) == 2)
                 {
-                    pieces[(x1 + x2) / 2, (y1 + y2) / 2] = null;
-                    Destroy((p as MonoBehaviour).gameObject, 0.2f);
-                    hasKilled = true;
+                    Piece p = pieces[(x1 + x2) / 2, (y1 + y2) / 2];
+                    if (p != null)
+                    {
+                        pieces[(x1 + x2) / 2, (y1 + y2) / 2] = null;
+                        Destroy((p as MonoBehaviour).gameObject, 0.2f);
+                        hasKilled = true;
+                    }
                 }
-            }
 
-            if (killerPieces.Count > 0 && !hasKilled)
+                if (killerPieces.Count > 0 && !hasKilled)
+                {
+                    MovePiece(selectedPiece, x1, y1);
+                    //startDrag = Vector2.zero;
+                    startDrag.x = startDrag.y = -1;
+                    selectedPiece = null;
+                    return;
+                }
+
+                pieces[x1, y1] = null;
+                pieces[x2, y2] = selectedPiece;
+                MovePiece(selectedPiece, x2, y2);
+
+                EndTurn();
+            }
+            else
             {
                 MovePiece(selectedPiece, x1, y1);
                 //startDrag = Vector2.zero;
@@ -140,20 +161,6 @@ public class CheckersBoard : MonoBehaviour
                 selectedPiece = null;
                 return;
             }
-
-            pieces[x1, y1] = null;
-            pieces[x2, y2] = selectedPiece;
-            MovePiece(selectedPiece, x2, y2);
-
-            EndTurn();
-        }
-        else
-        {
-            MovePiece(selectedPiece, x1, y1);
-            //startDrag = Vector2.zero;
-            startDrag.x = startDrag.y = -1;
-            selectedPiece = null;
-            return;
         }
     }
 
@@ -169,6 +176,13 @@ public class CheckersBoard : MonoBehaviour
             selectedPiece.isKing = true;
             selectedPiece.transform.Rotate(Vector3.right * 180);
         }
+
+        string msg = "CMOV"
+                      + "|" + startDrag.x.ToString()
+                      + "|" + startDrag.y.ToString()
+                      + "|" + endDrag.x.ToString()
+                      + "|" + endDrag.y.ToString();
+        client.Send(msg);
 
         // multi move
         if (hasKilled && selectedPiece.CanKill(pieces, x, y))
